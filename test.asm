@@ -1,8 +1,5 @@
-PRINT 1
-
-PRINT 2
-
-PRINT 3
-
-    PRINT 4
-PRINT                                         5
+MEM 1024
+IN 1
+IN 2
+MUL *1 *2 3
+OUT *3

@@ -14,38 +14,37 @@ value/index := [\*.][0-9]+
 Instructions:
 
 ```
+NOP
+NOP index
 MEM value
 IN index
 OUT value
-EXIT value
-NOP
-NOP index
-SET index value
-CPY index index
-ADD index index index
-SUB index index index
-MUL index index index
-DIV index index index
-MOD index index index
-INC index
-DEC index
-NEC index
-AND index
-OR index
-XOR index
-NOT index
-SHL index value
-SHR index value
-ROL index value
-ROR index value
-EQU index index index
-GTER index index index
-LESS index index index
-LEQ index index index
-REQ index index index
+SET value index
+ADD value value index
+SUB value value index
+MUL value value index
+DIV value value index
+MOD value value index
+INC value index
+DEC value index
+NEC value index
+AND value value index
+OR value value index
+XOR value value index
+FLIP value index
+NOT value index
+SHL value value index
+SHR value value index
+ROL value value index
+ROR value value index
+EQU value value index
+GTER value value index
+LESS value value index
+GEQ value value index
+LEQ value value index
 JMP value
 JMOV value
 JIF value value
-JIFM valule value
+JIFM value value
 # comments
 ```
