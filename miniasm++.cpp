@@ -2,6 +2,8 @@
 // Copyright 2016 riteme
 //
 
+// #define NDEBUG
+
 #include <cassert>
 #include <cctype>
 #include <climits>
@@ -11,6 +13,7 @@
 #include <iterator>
 #include <list>
 #include <random>
+#include <typeinfo>
 #include <utility>
 #include <vector>
 
@@ -32,6 +35,9 @@ using namespace std;
         printf("(ERROR) %s\n", message); \
         exit(-1);                        \
     }
+
+#define DEBUG(message) puts(message);
+#define DEBUGF(message, ...) printf(message "\n", __VA_ARGS__);
 
 /**
  * 1 for enabling friendly mode to users
@@ -248,20 +254,9 @@ class Program {
     /**
      * Run program until exited or exceeded the time limit
      */
-    void run() {
-        while (!exited()) {
-            ASSERT(_timer <= Timelimit, "Time limit exceeded");
-            ASSERT(0 <= current && current < _commands.size(),
-                   "Invalid position");
+    void run();
 
-            Command &comm = _commands[current];
-            current++;
-
-            ASSERT(comm.instruction != nullptr, "Invalid instruction");
-            ASSERT(comm.args != nullptr, "Arguments missing");
-            _timer += comm.instruction->execute(comm.args);
-        }  // while
-    }
+    void run_partical();
 
     MemoryPool memory;
     size_t current;
@@ -428,6 +423,7 @@ class NopInstruction final : public Instruction {
     virtual size_t execute(const void *_args) {
         auto env = Instruction::env;
         auto args = reinterpret_cast<const NopArgs *>(_args);
+        DEBUG("NOP")
 
         return 0;
     }
@@ -444,6 +440,7 @@ class TaggedNopInstruction final : public Instruction {
     virtual size_t execute(const void *_args) {
         auto env = Instruction::env;
         auto args = reinterpret_cast<const TaggedNopArgs *>(_args);
+        DEBUGF("NOP %d", GET(index))
 
         env->memory[GET(index)] = env->current;
 
@@ -462,6 +459,7 @@ class MemInstruction final : public Instruction {
     virtual size_t execute(const void *_args) {
         auto env = Instruction::env;
         auto args = reinterpret_cast<const MemArgs *>(_args);
+        DEBUGF("MEM %d", GET(value))
 
         env->memory.resize(GET(value));
 
@@ -480,6 +478,7 @@ class InInstruction final : public Instruction {
     virtual size_t execute(const void *_args) {
         auto env = Instruction::env;
         auto args = reinterpret_cast<const InArgs *>(_args);
+        DEBUGF("IN %d", GET(index))
 
         int result;
         scanf("%d", &result);
@@ -500,6 +499,7 @@ class OutInstruction final : public Instruction {
     virtual size_t execute(const void *_args) {
         auto env = Instruction::env;
         auto args = reinterpret_cast<const OutArgs *>(_args);
+        DEBUGF("OUT %d", GET(value))
 
         printf("%d\n", GET(value));
         return 0;
@@ -518,6 +518,7 @@ class SetInstruction final : public Instruction {
     virtual size_t execute(const void *_args) {
         auto env = Instruction::env;
         auto args = reinterpret_cast<const SetArgs *>(_args);
+        DEBUGF("SET %d %d", GET(value), GET(index))
 
         env->memory[GET(index)] = GET(value);
 
@@ -538,6 +539,7 @@ class AddInstruction final : public Instruction {
     virtual size_t execute(const void *_args) {
         auto env = Instruction::env;
         auto args = reinterpret_cast<const AddArgs *>(_args);
+        DEBUGF("ADD %d %d %d", GET(value1), GET(value2), GET(index))
 
         env->memory[GET(index)] = GET(value1) + GET(value2);
 
@@ -558,6 +560,7 @@ class SubInstruction final : public Instruction {
     virtual size_t execute(const void *_args) {
         auto env = Instruction::env;
         auto args = reinterpret_cast<const SubArgs *>(_args);
+        DEBUGF("SUB %d %d %d", GET(value1), GET(value2), GET(index))
 
         env->memory[GET(index)] = GET(value1) - GET(value2);
 
@@ -578,6 +581,7 @@ class MulInstruction final : public Instruction {
     virtual size_t execute(const void *_args) {
         auto env = Instruction::env;
         auto args = reinterpret_cast<const MulArgs *>(_args);
+        DEBUGF("MUL %d %d %d", GET(value1), GET(value2), GET(index))
 
         env->memory[GET(index)] = GET(value1) * GET(value2);
 
@@ -598,6 +602,7 @@ class DivInstruction final : public Instruction {
     virtual size_t execute(const void *_args) {
         auto env = Instruction::env;
         auto args = reinterpret_cast<const DivArgs *>(_args);
+        DEBUGF("DIV %d %d %d", GET(value1), GET(value2), GET(index))
 
         env->memory[GET(index)] = GET(value1) / GET(value2);
 
@@ -618,6 +623,7 @@ class ModInstruction final : public Instruction {
     virtual size_t execute(const void *_args) {
         auto env = Instruction::env;
         auto args = reinterpret_cast<const ModArgs *>(_args);
+        DEBUGF("MOD %d %d %d", GET(value1), GET(value2), GET(index))
 
         env->memory[GET(index)] = GET(value1) % GET(value2);
 
@@ -637,6 +643,7 @@ class IncInstruction final : public Instruction {
     virtual size_t execute(const void *_args) {
         auto env = Instruction::env;
         auto args = reinterpret_cast<const IncArgs *>(_args);
+        DEBUGF("INC %d %d", GET(value), GET(index))
 
         env->memory[GET(index)] = GET(value) + 1;
 
@@ -656,6 +663,7 @@ class DecInstruction final : public Instruction {
     virtual size_t execute(const void *_args) {
         auto env = Instruction::env;
         auto args = reinterpret_cast<const DecArgs *>(_args);
+        DEBUGF("DEC %d %d", GET(value), GET(index))
 
         env->memory[GET(index)] = GET(value) - 1;
 
@@ -675,6 +683,7 @@ class NecInstruction final : public Instruction {
     virtual size_t execute(const void *_args) {
         auto env = Instruction::env;
         auto args = reinterpret_cast<const NecArgs *>(_args);
+        DEBUGF("NEC %d %d", GET(value), GET(index))
 
         env->memory[GET(index)] = -GET(value);
 
@@ -695,6 +704,7 @@ class AndInstruction final : public Instruction {
     virtual size_t execute(const void *_args) {
         auto env = Instruction::env;
         auto args = reinterpret_cast<const AndArgs *>(_args);
+        DEBUGF("AND %d %d %d", GET(value1), GET(value2), GET(index))
 
         env->memory[GET(index)] = GET(value1) & GET(value2);
 
@@ -715,6 +725,7 @@ class OrInstruction final : public Instruction {
     virtual size_t execute(const void *_args) {
         auto env = Instruction::env;
         auto args = reinterpret_cast<const OrArgs *>(_args);
+        DEBUGF("OR %d %d %d", GET(value1), GET(value2), GET(index))
 
         env->memory[GET(index)] = GET(value1) | GET(value2);
 
@@ -735,6 +746,7 @@ class XorInstruction final : public Instruction {
     virtual size_t execute(const void *_args) {
         auto env = Instruction::env;
         auto args = reinterpret_cast<const XorArgs *>(_args);
+        DEBUGF("XOR %d %d %d", GET(value1), GET(value2), GET(index))
 
         env->memory[GET(index)] = GET(value1) ^ GET(value2);
 
@@ -754,6 +766,7 @@ class FlipInstruction final : public Instruction {
     virtual size_t execute(const void *_args) {
         auto env = Instruction::env;
         auto args = reinterpret_cast<const FlipArgs *>(_args);
+        DEBUGF("FLIP %d %d", GET(value), GET(index))
 
         env->memory[GET(index)] = ~(GET(value));
 
@@ -773,6 +786,7 @@ class NotInstruction final : public Instruction {
     virtual size_t execute(const void *_args) {
         auto env = Instruction::env;
         auto args = reinterpret_cast<const NotArgs *>(_args);
+        DEBUGF("NOT %d %d", GET(value), GET(index))
 
         env->memory[GET(index)] = !GET(value);
 
@@ -793,6 +807,7 @@ class ShlInstruction final : public Instruction {
     virtual size_t execute(const void *_args) {
         auto env = Instruction::env;
         auto args = reinterpret_cast<const ShlArgs *>(_args);
+        DEBUGF("SHL %d %d %d", GET(value1), GET(value2), GET(index))
 
         env->memory[GET(index)] = GET(value1) << GET(value2);
 
@@ -813,6 +828,7 @@ class ShrInstruction final : public Instruction {
     virtual size_t execute(const void *_args) {
         auto env = Instruction::env;
         auto args = reinterpret_cast<const ShrArgs *>(_args);
+        DEBUGF("SHR %d %d %d", GET(value1), GET(value2), GET(index))
 
         env->memory[GET(index)] = GET(value1) >> GET(value2);
 
@@ -835,6 +851,7 @@ class RolInstruction final : public Instruction {
     virtual size_t execute(const void *_args) {
         auto env = Instruction::env;
         auto args = reinterpret_cast<const RolArgs *>(_args);
+        DEBUGF("ROL %d %d %d", GET(value1), GET(value2), GET(index))
 
         int v = GET(value1);
         int t = GET(value2) & INT_HIGHBIT;
@@ -859,6 +876,7 @@ class RorInstruction final : public Instruction {
     virtual size_t execute(const void *_args) {
         auto env = Instruction::env;
         auto args = reinterpret_cast<const RorArgs *>(_args);
+        DEBUGF("ROR %d %d %d", GET(value1), GET(value2), GET(index))
 
         int v = GET(value1);
         int t = GET(value2) & INT_HIGHBIT;
@@ -883,6 +901,7 @@ class EquInstruction final : public Instruction {
     virtual size_t execute(const void *_args) {
         auto env = Instruction::env;
         auto args = reinterpret_cast<const EquArgs *>(_args);
+        DEBUGF("EQU %d %d %d", GET(value1), GET(value2), GET(index))
 
         env->memory[GET(index)] = GET(value1) == GET(value2);
 
@@ -903,6 +922,7 @@ class GterInstruction final : public Instruction {
     virtual size_t execute(const void *_args) {
         auto env = Instruction::env;
         auto args = reinterpret_cast<const GterArgs *>(_args);
+        DEBUGF("GTER %d %d %d", GET(value1), GET(value2), GET(index))
 
         env->memory[GET(index)] = GET(value1) > GET(value2);
 
@@ -923,6 +943,7 @@ class LessInstruction final : public Instruction {
     virtual size_t execute(const void *_args) {
         auto env = Instruction::env;
         auto args = reinterpret_cast<const LessArgs *>(_args);
+        DEBUGF("LESS %d %d %d", GET(value1), GET(value2), GET(index))
 
         env->memory[GET(index)] = GET(value1) < GET(value2);
 
@@ -943,6 +964,7 @@ class GeqInstruction final : public Instruction {
     virtual size_t execute(const void *_args) {
         auto env = Instruction::env;
         auto args = reinterpret_cast<const GeqArgs *>(_args);
+        DEBUGF("GEQ %d %d %d", GET(value1), GET(value2), GET(index))
 
         env->memory[GET(index)] = GET(value1) >= GET(value2);
 
@@ -963,6 +985,7 @@ class LeqInstruction final : public Instruction {
     virtual size_t execute(const void *_args) {
         auto env = Instruction::env;
         auto args = reinterpret_cast<const LeqArgs *>(_args);
+        DEBUGF("LEQ %d %d %d", GET(value1), GET(value2), GET(index))
 
         env->memory[GET(index)] = GET(value1) <= GET(value2);
 
@@ -981,6 +1004,7 @@ class JmpInstruction final : public Instruction {
     virtual size_t execute(const void *_args) {
         auto env = Instruction::env;
         auto args = reinterpret_cast<const JmpArgs *>(_args);
+        DEBUGF("JMP %d", GET(value))
 
         env->current = GET(value);
 
@@ -999,8 +1023,9 @@ class JmovInstruction final : public Instruction {
     virtual size_t execute(const void *_args) {
         auto env = Instruction::env;
         auto args = reinterpret_cast<const JmovArgs *>(_args);
+        DEBUGF("JMOV %d", GET(value))
 
-        env->current += GET(value);
+        env->current += GET(value) - 1;
 
         return 0;
     }
@@ -1018,6 +1043,7 @@ class JifInstruction final : public Instruction {
     virtual size_t execute(const void *_args) {
         auto env = Instruction::env;
         auto args = reinterpret_cast<const JifArgs *>(_args);
+        DEBUGF("JIF %d %d", GET(value1), GET(value2))
 
         if (GET(value1))
             env->current = GET(value2);
@@ -1038,9 +1064,10 @@ class JifmInstruction final : public Instruction {
     virtual size_t execute(const void *_args) {
         auto env = Instruction::env;
         auto args = reinterpret_cast<const JifmArgs *>(_args);
+        DEBUGF("JIFM %d %d", GET(value1), GET(value2))
 
         if (GET(value1))
-            env->current += GET(value2);
+            env->current += GET(value2) - 1;
 
         return 0;
     }
@@ -1050,6 +1077,37 @@ class JifmInstruction final : public Instruction {
 
 #undef GET
 #undef IMPLEMENT_BASIS
+
+void Program::run() {
+    while (!exited()) {
+        ASSERT(_timer <= Timelimit, "Time limit exceeded");
+        ASSERT(0 <= current && current < _commands.size(), "Invalid position");
+
+        Command &comm = _commands[current];
+        current++;
+
+        if (typeid(*comm.instruction) == typeid(MemInstruction) ||
+            typeid(*comm.instruction) == typeid(TaggedNopInstruction))
+            continue;
+
+        ASSERT(comm.instruction != nullptr, "Invalid instruction");
+        ASSERT(comm.args != nullptr, "Arguments missing");
+        _timer += comm.instruction->execute(comm.args);
+    }  // while
+}
+
+void Program::run_partical() {
+    for (current = 0; current < _commands.size(); current++) {
+        Command &comm = _commands[current];
+
+        if (typeid(*comm.instruction) == typeid(MemInstruction) ||
+            typeid(*comm.instruction) == typeid(TaggedNopInstruction)) {
+            comm.instruction->execute(comm.args);
+        }
+    }  // for
+
+    current = 0;
+}
 
 ////////////
 // PARSER //
@@ -1164,7 +1222,7 @@ class Parser {
         TokenList tokens = _tokenizer.tokenize(line);
 
         if (tokens.empty() || tokens.front().is_comment())
-            return { nullptr, nullptr };
+            return { new NopInstruction, new NopInstruction::NopArgs };
 
         if (tokens.front().equal_to("NOP"))  // NOP and Tagger NOP
             return parse_nop(tokens);
@@ -1259,6 +1317,7 @@ int main() {
             program.append(command);
     }  // while
 
+    program.run_partical();
     program.run();
 
     return 0;

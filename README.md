@@ -21,7 +21,7 @@ IN index
 OUT value
 SET value index
 ADD value value index
-SUB value value index
+SUB value value index    
 MUL value value index
 DIV value value index
 MOD value value index
