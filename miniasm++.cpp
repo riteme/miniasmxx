@@ -226,7 +226,7 @@ class Program {
      * @return Bool
      */
     bool exited() const {
-        return current >= _commands.size();
+        return current >= static_cast<int>(_commands.size());
     }
 
     /**
@@ -259,150 +259,12 @@ class Program {
     void run_partical();
 
     MemoryPool memory;
-    size_t current;
+    int current;
 
  private:
     size_t _timer;
     vector<Command> _commands;
 };  // class Program
-
-///////////
-// TOKEN //
-///////////
-
-struct Token {
-    constexpr static size_t MaxLexemeLength = 4096;
-
-    Token() : size(0), lexeme(nullptr) {}
-
-    Token(const char *buffer) : lexeme(nullptr) {
-        store(buffer);
-    }
-
-    Token(const char *buffer, const size_t beg, const size_t end)
-            : lexeme(nullptr) {
-        store(buffer, beg, end);
-    }
-
-    Token(const Token &b) {
-        store(b.lexeme);
-    }
-
-    Token(Token &&b) : size(b.size), lexeme(b.lexeme) {
-        b.size = 0;
-        b.lexeme = nullptr;
-    }
-
-    Token &operator=(const Token &b) {
-        this->store(b.lexeme);
-
-        return *this;
-    }
-
-    Token &operator=(Token &&b) {
-        size = b.size;
-        lexeme = b.lexeme;
-        b.size = 0;
-        b.lexeme = nullptr;
-
-        return *this;
-    }
-
-    ~Token() {
-        if (lexeme)
-            delete lexeme;
-    }
-
-    void store(const char *buffer,
-               const size_t beg = 0,
-               const size_t end = UINT_MAX) {
-        if (end < UINT_MAX)
-            size = end - beg;
-        else
-            size = strlen(buffer + beg);
-
-        ASSERT(size <= MaxLexemeLength, "Lexeme too loog");
-
-        if (lexeme)
-            delete lexeme;
-
-        lexeme = new char[size];
-        memcpy(lexeme, buffer + beg, sizeof(char) * size);
-    }
-
-    bool equal_to(const char *str) const {
-        return equal(str, str + strlen(str), lexeme, lexeme + size);
-    }
-
-    bool is_int() const {
-        return size > 0 && isdigit(lexeme[0]);
-    }
-
-    int as_int() const {
-        return atoi(lexeme);
-    }
-
-    long as_long() const {
-        return atol(lexeme);
-    }
-
-    bool is_comment() const {
-        return size > 0 && lexeme[0] == '#';
-    }
-
-    long long as_long_long() const {
-        return atoll(lexeme);
-    }
-
-    size_t size;
-    char *lexeme;
-};  // struct Token
-
-///////////////
-// TOKENIZER //
-///////////////
-
-class Tokenizer {
- public:
-    list<Token> tokenize(const char *buffer) const {
-        enum TokenType { UNKNOWN, ALPHAS, SIGNS, DIGITS };
-
-        TokenType mode = UNKNOWN;
-        size_t lastpos = 0;
-        list<Token> tokens;
-        for (size_t pos = 0; buffer[pos]; pos++) {
-            char c = buffer[pos];
-
-            TokenType type;
-            if (isalpha(c))
-                type = ALPHAS;
-            else if (isdigit(c))
-                type = DIGITS;
-            else if (c == '*' || c == '#')
-                type = SIGNS;
-            else
-                type = UNKNOWN;
-
-            if (type == UNKNOWN) {
-                if (mode != UNKNOWN) {
-                    mode = UNKNOWN;
-                    tokens.push_back(Token(buffer, lastpos, pos));
-                }
-            } else {
-                if (mode == UNKNOWN) {
-                    mode = type;
-                    lastpos = pos;
-                } else if (mode != type) {
-                    mode = UNKNOWN;
-                    tokens.push_back(Token(buffer, lastpos, pos));
-                    pos--;
-                }
-            }
-        }  // for
-
-        return tokens;
-    }
-};  // class Tokenizer
 
 /////////////////////////////////
 // INSTRUCTION IMPLEMENTATIONS //
@@ -1108,6 +970,152 @@ void Program::run_partical() {
 
     current = 0;
 }
+
+///////////
+// TOKEN //
+///////////
+
+struct Token {
+    constexpr static size_t MaxLexemeLength = 4096;
+
+    Token() : size(0), lexeme(nullptr) {}
+
+    Token(const char *buffer) : lexeme(nullptr) {
+        store(buffer);
+    }
+
+    Token(const char *buffer, const size_t beg, const size_t end)
+            : lexeme(nullptr) {
+        store(buffer, beg, end);
+    }
+
+    Token(const Token &b) {
+        store(b.lexeme);
+    }
+
+    Token(Token &&b) : size(b.size), lexeme(b.lexeme) {
+        b.size = 0;
+        b.lexeme = nullptr;
+    }
+
+    Token &operator=(const Token &b) {
+        this->store(b.lexeme);
+
+        return *this;
+    }
+
+    Token &operator=(Token &&b) {
+        size = b.size;
+        lexeme = b.lexeme;
+        b.size = 0;
+        b.lexeme = nullptr;
+
+        return *this;
+    }
+
+    ~Token() {
+        if (lexeme)
+            delete lexeme;
+    }
+
+    void store(const char *buffer,
+               const size_t beg = 0,
+               const size_t end = UINT_MAX) {
+        if (end < UINT_MAX)
+            size = end - beg;
+        else
+            size = strlen(buffer + beg);
+
+        ASSERT(size <= MaxLexemeLength, "Lexeme too loog");
+
+        if (lexeme)
+            delete lexeme;
+
+        lexeme = new char[size + 1];
+        memcpy(lexeme, buffer + beg, sizeof(char) * size);
+        lexeme[size] = '\0';
+    }
+
+    bool equal_to(const char *str) const {
+        return equal(str, str + strlen(str), lexeme, lexeme + size);
+    }
+
+    bool is_int() const {
+        return size > 0 && isdigit(lexeme[size - 1]);
+    }
+
+    int as_int() const {
+        return atoi(lexeme);
+    }
+
+    long as_long() const {
+        return atol(lexeme);
+    }
+
+    bool is_comment() const {
+        return size > 0 && lexeme[0] == '#';
+    }
+
+    long long as_long_long() const {
+        return atoll(lexeme);
+    }
+
+    size_t size;
+    char *lexeme;
+};  // struct Token
+
+///////////////
+// TOKENIZER //
+///////////////
+
+class Tokenizer {
+ public:
+    list<Token> tokenize(const char *buffer) const {
+        enum TokenType { UNKNOWN, ALPHAS, SIGNS, COMMENTS, DIGITS };
+
+        TokenType mode = UNKNOWN;
+        size_t lastpos = 0;
+        list<Token> tokens;
+        for (size_t pos = 0; buffer[pos]; pos++) {
+            char c = buffer[pos];
+
+            TokenType type;
+            if (isalpha(c))
+                type = ALPHAS;
+            else if (isdigit(c) || c == '-')
+                type = DIGITS;
+            else if (c == '*')
+                type = SIGNS;
+            else if (c == '#')
+                type = COMMENTS;
+            else if (isspace(c))
+                type = UNKNOWN;
+            else
+                ASSERT(false, "Unrecognized character")
+
+            if (type == UNKNOWN) {
+                if (mode != UNKNOWN) {
+                    mode = UNKNOWN;
+                    tokens.push_back(Token(buffer, lastpos, pos));
+                }
+            } else {
+                if (mode == UNKNOWN) {
+                    mode = type;
+                    lastpos = pos;
+                } else if (mode != type) {
+                    mode = UNKNOWN;
+                    tokens.push_back(Token(buffer, lastpos, pos));
+                    pos--;
+                }
+            }
+
+            if (type == COMMENTS)
+                break;
+        }  // for
+
+        return tokens;
+    }
+};  // class Tokenizer
 
 ////////////
 // PARSER //
